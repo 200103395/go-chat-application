@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Page</title>
+    <style>
+        body {
+            background-color: burlywood;
+            padding: 0;
+            margin: 0;
+        }
+        .searchBar {
+            width: 100vw;
+            padding: 0 20px;
+            box-sizing: border-box;
+            margin: 20px 0;
+        }
+        #search {
+            margin-right: 10px;
+            width: 40%;
+            box-sizing: border-box;
+        }
+        .chat {
+            width: 100vw;
+            padding: 0 20px;
+            box-sizing: border-box;
+            margin: 10px 0;
+            display: flex;
+        }
+        h3 {
+
+            margin: 0;
+            padding: 0 10px;
+        }
+        .username {
+            flex: 20%;
+        }
+        .message {
+            flex: 80%;
+        }
+        .time {
+            flex: 10%;
+        }
+    </style>
+
+</head>
+<body>
+    <header><a href="/unAuthorize"><button>Sign out</button></a></header>
+    <div id="chats"></div>
+    <div class="searchBar">
+        <input type="text" id="search"><button onclick="search()">Search</button>
+    </div>
+    <div id="notYetChats"></div>
+    <script>
+        function search() {
+            let input = document.getElementById('search').value;
+            if( input !== '') {
+                fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({'input': input})
+                }).then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        addSearch(data);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+        }
+        function addSearch(data) {
+            let div = document.getElementById('notYetChats');
+            div.innerHTML = '';
+            data.forEach(function(line) {
+                console.log('Line: ',line);
+                let block = document.createElement('div');
+                block.className = 'chat';
+                let name = document.createElement('h3');
+                name.innerText = line['username'];
+                let link = document.createElement('a');
+                link.href = '/chat/' + line['username'];
+                link.className = 'username';
+                link.appendChild(name);
+                block.appendChild(link);
+                div.appendChild(block);
+            });
+        }
+        function addChats(data) {
+            console.log('Add chats: ', data);
+            let div = document.getElementById('chats');
+            div.innerHTML = '';
+            data.forEach(function(line) {
+                console.log('Line: ',line);
+                let block = document.createElement('div');
+                block.className = 'chat';
+                let name = document.createElement('h3');
+                name.innerText = line['username'];
+                let link = document.createElement('a');
+                link.href = '/chat/' + line['username'];
+                link.className = 'username';
+                let message = document.createElement('h3');
+                message.innerText = line['message'];
+                message.className = 'message';
+                let time = document.createElement('h3');
+                time.innerText = formDate(line['time']);
+                time.className = 'time';
+                link.appendChild(name);
+                block.appendChild(link);
+                block.appendChild(message);
+                block.appendChild(time);
+                div.appendChild(block);
+            });
+        }
+        function fetchChats() {
+            fetch('/getChatNames', {
+                method: "GET"
+            }).then(response => response.json())
+                .then(data => addChats(data))
+                .catch(error => console.error(error));
+        }
+        window.onload = function() {
+            fetchChats();
+            setInterval(fetchChats, 15000);
+        }
+        function formDate(timeString){
+            const date = new Date(timeString);
+            const day = String(date.getDay()).padStart(2, '0');
+            const month = String(date.getMonth()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}:${month} ${hours}:${minutes}`;
+        }
+    </script>
+</body>
+</html>

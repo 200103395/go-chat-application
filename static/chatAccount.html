@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="title">Title</title>
+    <style>
+        body, html {
+            background-color: burlywood;
+            padding: 0;
+            margin: 0;
+            height: 100%;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            height: 30px;
+            font-size: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header .elements {
+            display: flex;
+            gap:10px;
+            align-items: center;
+        }
+        #messages {
+            flex: 1; /* Takes 80% of the space */
+            overflow-y: auto; /* Enables vertical scrolling */
+            padding: 10px;
+            flex-direction: row;
+            font-family: Arial;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f4f4f4;
+        }
+        .messageBox {
+            display: flex;
+        }
+        .message {
+            max-width: 80%; /* Adjust as needed */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0 10px 10px;
+        }
+        .message .content {
+            flex-grow: 1;
+            word-wrap: break-word; /* Allow long words to wrap */
+        }
+        .message .time {
+            flex-shrink: 0;
+            align-self: flex-end;
+            margin-top: 5px;
+        }
+        .input {
+            width: 100vw;
+            padding: 0 20px;
+            box-sizing: border-box;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+        }
+        .input input {
+            padding: 10px; /* Add padding */
+            border: 1px solid #ccc; /* Add border */
+            border-radius: 5px; /* Add border radius */
+            font-size: 16px; /* Set font size */
+
+            margin-right: 10px;
+            width: 90%;
+            box-sizing: border-box;
+        }
+
+        /* Optional: Style when the input is focused */
+        .input input:focus {
+            outline: none; /* Remove default focus outline */
+            border-color: #007bff; /* Change border color */
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Add box shadow */
+        }
+        .input button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="header">
+            <div class="elements">
+            <div id="ChatName"></div>
+            <div><a href="/unAuthorize"><button>Sign out</button></a></div>
+            <div><a href="/chat"><button>Return to chats</button></a></div>
+            </div>
+        </div>
+        <div id="messages">
+        </div>
+        <div class="input">
+            <input type="text" id="message"><button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+  <script>
+      const elementNum = 4;
+    function createMessage(data) {
+        let block = document.createElement('div');
+        block.className = 'messageBox';
+        let message = document.createElement('div');
+        message.classList.add('message');
+        let content = document.createElement('div');
+        content.textContent = data['message'];
+        content.className = 'content';
+        let time = document.createElement('span');
+        time.textContent = formDate(data['time']);
+        time.className = 'time';
+        message.appendChild(content);
+        message.appendChild(time);
+        if( data['to'] === getName()) {
+            block.style.justifyContent = 'flex-end';
+        } else {
+            block.style.justifyContent = 'flex-start';
+        }
+
+        block.appendChild(message);
+        return block
+    }
+    function sendMessage() {
+      let message = document.getElementById('message').value;
+      let sendData = JSON.stringify({'message': message});
+      console.log(sendData);
+      fetch(window.location.href, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: sendData
+      }).then(response => response.json())
+              .then(data => {
+                  document.getElementById('messages').appendChild(createMessage(data));
+                  document.getElementById('message').value = '';
+              })
+              .catch(error => console.error(error));
+    }
+    function showMessages(data) {
+        let div = document.getElementById('messages');
+        let len = div.querySelectorAll('*').length;
+        let newLen = Object.keys(data).length;
+        let toDo = false;
+        if(len === 0) {
+            toDo = true;
+        }
+        data.forEach(function(line) {
+            if(len > 0) {
+                len = len - elementNum;
+                return;
+            }
+            div.appendChild(createMessage(line));
+        });
+        if(toDo === true) {
+            div.scrollTop = div.scrollHeight;
+        }
+    }
+    function fetchMessages() {
+        let name = getName();
+        console.log('new fetch');
+        fetch('/getMessages/' + name)
+            .then(response => response.json())
+            .then(data => showMessages(data))
+            .catch(error => console.error(error));
+    }
+    function getInitialMessages() {
+        fetchMessages();
+        let div = document.getElementById('messages');
+        setInterval(fetchMessages, 3000);
+    }
+    function getName() {
+        splitted = window.location.href.split("/");
+        return splitted[splitted.length - 1];
+    }
+    function formDate(time) {
+        const date = new Date(time);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
+    window.onload = function() {
+        let name = getName();
+        document.getElementById('title').innerText = 'Chat ' + name;
+        document.getElementById('ChatName').innerText = name;
+        getInitialMessages();
+    }
+  </script>
+</body>
+</html>

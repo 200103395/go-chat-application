@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        var account;
+        function getAccountInfo() {
+            fetch("/getAccountInfo").then(response => response.json())
+                .then(data => {
+                    account = data;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+        function showPage() {
+            if( account.hasOwnProperty('username')) {
+                window.location.href = '/chat';
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: burlywood;
+            padding: 0;
+            margin: 0;
+        }
+        .mainBox {
+            height: 1000px;
+            width: 100%;
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+<div class="mainBox">
+    <div class="secondary">
+        <a href="/login"><button>Sign In</button></a>
+    </div>
+    <div class="secondary">
+        <a href="/register"><button>Sign Up</button></a>
+    </div>
+</div>
+<script>
+    window.onload = function() {
+        getAccountInfo();
+        showPage();
+    }
+</script>
+</body>
+</html>
